@@ -10,7 +10,7 @@ import cPickle
 import numpy as np
 
 def parse_rec(filename):
-    """ Parse an IEI xml file """
+    """ Parse a VOC xml file """
     tree = ET.parse(filename)
     objects = []
     for obj in tree.findall('object'):
