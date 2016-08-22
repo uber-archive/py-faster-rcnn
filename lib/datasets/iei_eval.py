@@ -8,74 +8,100 @@ import xml.etree.ElementTree as ET
 import os
 import cPickle
 import numpy as np
+from shapely.wkt import loads
+from osgeo import ogr
+
+
+def load_truth_from_xmlnode(xmlnode):
+    """
+    load truth from xml node
+    :param xmlnode: an xml node
+    :return: list of truth tuples (polygon, truth value, truth tags/category)
+    """
+    truths = []
+    for truth in xmlnode.findall('page/region/line/word'):
+        tags1 = truth.get('tags')
+        if tags1 is None:
+            tags1 = 'None'
+        val = truth.get('val')
+        poly = truth.get('poly')
+        # skip bad data: poly is empty etc.
+        if len(poly) > 2:
+            polygon = points_str_to_ogrpolygon(poly)
+            truths.append((polygon, val, tags1))
+    return truths
+
+def points_str_to_ogrpolygon(points_str):
+    points = []
+    point_array = points_str.split(' ')
+
+    for i in range(0, len(point_array), 2):
+        points.append((float(point_array[i]), float(point_array[i + 1])))
+
+    ring = ogr.Geometry(ogr.wkbLinearRing)
+    for point in points:
+        ring.AddPoint(float(point[0]), float(point[1]))
+    ring.AddPoint(float(points[0][0]), float(points[0][1]))
+
+    # Create polygon
+    poly = ogr.Geometry(ogr.wkbPolygon)
+    poly.AddGeometry(ring)
+    return poly
 
 def parse_rec(filename):
-    """ Parse a VOC xml file """
-    tree = ET.parse(filename)
+    """ Parse an IEI xml file """
+    input_node = ET.parse(filename).getroot()
     objects = []
-    for obj in tree.findall('object'):
+
+    for obj in load_truth_from_xmlnode(input_node):
+        geometry = obj[0]
+        poly = loads(geometry.ExportToWkt())
+
         obj_struct = {}
-        obj_struct['name'] = obj.find('name').text
-        obj_struct['pose'] = obj.find('pose').text
-        obj_struct['truncated'] = int(obj.find('truncated').text)
-        obj_struct['difficult'] = int(obj.find('difficult').text)
-        bbox = obj.find('bndbox')
-        obj_struct['bbox'] = [int(bbox.find('xmin').text),
-                              int(bbox.find('ymin').text),
-                              int(bbox.find('xmax').text),
-                              int(bbox.find('ymax').text)]
+        obj_struct['name'] = 'sign'
+        obj_struct['pose'] = 'Unspecified'
+        obj_struct['truncated'] = 0
+        obj_struct['difficult'] = 0
+        obj_struct['bbox'] = poly.bounds
         objects.append(obj_struct)
 
     return objects
 
-def voc_ap(rec, prec, use_07_metric=False):
-    """ ap = voc_ap(rec, prec, [use_07_metric])
-    Compute VOC AP given precision and recall.
-    If use_07_metric is true, uses the
-    VOC 07 11 point method (default:False).
+
+def iei_ap(rec, prec):
+    """ ap = iei_ap(rec, prec)
+    Compute AP given precision and recall.
     """
-    if use_07_metric:
-        # 11 point metric
-        ap = 0.
-        for t in np.arange(0., 1.1, 0.1):
-            if np.sum(rec >= t) == 0:
-                p = 0
-            else:
-                p = np.max(prec[rec >= t])
-            ap = ap + p / 11.
-    else:
-        # correct AP calculation
-        # first append sentinel values at the end
-        mrec = np.concatenate(([0.], rec, [1.]))
-        mpre = np.concatenate(([0.], prec, [0.]))
+    # correct AP calculation
+    # first append sentinel values at the end
+    mrec = np.concatenate(([0.], rec, [1.]))
+    mpre = np.concatenate(([0.], prec, [0.]))
 
-        # compute the precision envelope
-        for i in range(mpre.size - 1, 0, -1):
-            mpre[i - 1] = np.maximum(mpre[i - 1], mpre[i])
+    # compute the precision envelope
+    for i in range(mpre.size - 1, 0, -1):
+        mpre[i - 1] = np.maximum(mpre[i - 1], mpre[i])
 
-        # to calculate area under PR curve, look for points
-        # where X axis (recall) changes value
-        i = np.where(mrec[1:] != mrec[:-1])[0]
+    # to calculate area under PR curve, look for points
+    # where X axis (recall) changes value
+    i = np.where(mrec[1:] != mrec[:-1])[0]
 
-        # and sum (\Delta recall) * prec
-        ap = np.sum((mrec[i + 1] - mrec[i]) * mpre[i + 1])
+    # and sum (\Delta recall) * prec
+    ap = np.sum((mrec[i + 1] - mrec[i]) * mpre[i + 1])
     return ap
 
-def voc_eval(detpath,
+def iei_eval(detpath,
              annopath,
              imagesetfile,
              classname,
              cachedir,
-             ovthresh=0.5,
-             use_07_metric=False):
-    """rec, prec, ap = voc_eval(detpath,
+             ovthresh=0.5):
+    """rec, prec, ap = iei_eval(detpath,
                                 annopath,
                                 imagesetfile,
                                 classname,
-                                [ovthresh],
-                                [use_07_metric])
+                                [ovthresh])
 
-    Top level function that does the PASCAL VOC evaluation.
+    Top level function that does the PASCAL iei evaluation.
 
     detpath: Path to detections
         detpath.format(classname) should produce the detection results file.
@@ -85,8 +111,6 @@ def voc_eval(detpath,
     classname: Category name (duh)
     cachedir: Directory for caching the annotations
     [ovthresh]: Overlap threshold (default = 0.5)
-    [use_07_metric]: Whether to use VOC07's 11 point AP computation
-        (default False)
     """
     # assumes detections are in detpath.format(classname)
     # assumes annotations are in annopath.format(imagename)
@@ -195,6 +219,6 @@ def voc_eval(detpath,
     # avoid divide by zero in case the first detection matches a difficult
     # ground truth
     prec = tp / np.maximum(tp + fp, np.finfo(np.float64).eps)
-    ap = voc_ap(rec, prec, use_07_metric)
+    ap = iei_ap(rec, prec)
 
     return rec, prec, ap
