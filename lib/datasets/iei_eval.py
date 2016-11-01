@@ -8,8 +8,13 @@ import xml.etree.ElementTree as ET
 import os
 import cPickle
 import numpy as np
-from shapely.wkt import loads
-from osgeo import ogr
+
+
+def get_files(dir, ext):
+    for current_dir, sub_dir, files in os.walk(dir):
+        for file in files:
+            if file.endswith(ext):
+                yield os.path.join(current_dir, file)
 
 
 def load_truth_from_xmlnode(xmlnode):
@@ -27,26 +32,28 @@ def load_truth_from_xmlnode(xmlnode):
         poly = truth.get('poly')
         # skip bad data: poly is empty etc.
         if len(poly) > 2:
-            polygon = points_str_to_ogrpolygon(poly)
-            truths.append((polygon, val, tags1))
+            bbox = points_str_to_bounding_box(poly)
+            truths.append((bbox, val, tags1))
     return truths
 
-def points_str_to_ogrpolygon(points_str):
-    points = []
+
+def points_str_to_bounding_box(points_str):
     point_array = points_str.split(' ')
+    min_x = 1e6
+    min_y = 1e6
+    max_x = -1e6
+    max_y = -1e6
 
     for i in range(0, len(point_array), 2):
-        points.append((float(point_array[i]), float(point_array[i + 1])))
+        x = float(point_array[i])
+        y = float(point_array[i + 1])
+        min_x = min(min_x, x)
+        min_y = min(min_y, y)
+        max_x = max(max_x, x)
+        max_y = max(max_y, y)
 
-    ring = ogr.Geometry(ogr.wkbLinearRing)
-    for point in points:
-        ring.AddPoint(float(point[0]), float(point[1]))
-    ring.AddPoint(float(points[0][0]), float(points[0][1]))
+    return (min_x, min_y, max_x, max_y)
 
-    # Create polygon
-    poly = ogr.Geometry(ogr.wkbPolygon)
-    poly.AddGeometry(ring)
-    return poly
 
 def parse_rec(filename):
     """ Parse an IEI xml file """
@@ -54,15 +61,13 @@ def parse_rec(filename):
     objects = []
 
     for obj in load_truth_from_xmlnode(input_node):
-        geometry = obj[0]
-        poly = loads(geometry.ExportToWkt())
-
+        bbox = obj[0]
         obj_struct = {}
         obj_struct['name'] = 'sign'
         obj_struct['pose'] = 'Unspecified'
         obj_struct['truncated'] = 0
         obj_struct['difficult'] = 0
-        obj_struct['bbox'] = poly.bounds
+        obj_struct['bbox'] = bbox
         objects.append(obj_struct)
 
     return objects
@@ -89,9 +94,9 @@ def iei_ap(rec, prec):
     ap = np.sum((mrec[i + 1] - mrec[i]) * mpre[i + 1])
     return ap
 
+
 def iei_eval(detpath,
-             annopath,
-             imagesetfile,
+             data_path,
              classname,
              cachedir,
              ovthresh=0.5):
@@ -121,19 +126,16 @@ def iei_eval(detpath,
     if not os.path.isdir(cachedir):
         os.mkdir(cachedir)
     cachefile = os.path.join(cachedir, 'annots.pkl')
-    # read list of images
-    with open(imagesetfile, 'r') as f:
-        lines = f.readlines()
-    imagenames = [x.strip() for x in lines]
 
-    if not os.path.isfile(cachefile):
+    label_paths = []
+    for label_path in get_files(data_path, '.xml'):
+        label_paths.append(label_path)
+
+    if True: # not os.path.isfile(cachefile):
         # load annots
         recs = {}
-        for i, imagename in enumerate(imagenames):
-            recs[imagename] = parse_rec(annopath.format(imagename))
-            if i % 100 == 0:
-                print 'Reading annotation for {:d}/{:d}'.format(
-                    i + 1, len(imagenames))
+        for i, label_path in enumerate(label_paths):
+            recs[os.path.basename(label_path)] = parse_rec(label_path)
         # save
         print 'Saving cached annotations to {:s}'.format(cachefile)
         with open(cachefile, 'w') as f:
@@ -146,15 +148,15 @@ def iei_eval(detpath,
     # extract gt objects for this class
     class_recs = {}
     npos = 0
-    for imagename in imagenames:
-        R = [obj for obj in recs[imagename] if obj['name'] == classname]
+    for label_path in label_paths:
+        R = [obj for obj in recs[os.path.basename(label_path)] if obj['name'] == classname]
         bbox = np.array([x['bbox'] for x in R])
         difficult = np.array([x['difficult'] for x in R]).astype(np.bool)
         det = [False] * len(R)
         npos = npos + sum(~difficult)
-        class_recs[imagename] = {'bbox': bbox,
-                                 'difficult': difficult,
-                                 'det': det}
+        class_recs[os.path.basename(label_path)] = {'bbox': bbox,
+                                  'difficult': difficult,
+                                  'det': det}
 
     # read dets
     detfile = detpath.format(classname)
@@ -172,7 +174,7 @@ def iei_eval(detpath,
     BB = BB[sorted_ind, :]
     image_ids = [image_ids[x] for x in sorted_ind]
 
-    # go down dets and mark TPs and FPs
+    # go down dets and mark TPs and FPs:
     nd = len(image_ids)
     tp = np.zeros(nd)
     fp = np.zeros(nd)

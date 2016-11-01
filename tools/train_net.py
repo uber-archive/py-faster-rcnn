@@ -12,7 +12,7 @@
 import _init_paths
 from fast_rcnn.train import get_training_roidb, train_net
 from fast_rcnn.config import cfg, cfg_from_file, cfg_from_list, get_output_dir
-from datasets.factory import get_imdb
+from datasets.factory import get_imdb, init_iei_imdbs
 import datasets.imdb
 import caffe
 import argparse
@@ -43,6 +43,9 @@ def parse_args():
     parser.add_argument('--imdb', dest='imdb_name',
                         help='dataset to train on',
                         default='voc_2007_trainval', type=str)
+    parser.add_argument('--imdb_path', dest='imdb_path',
+                        help='dataset path to train on',
+                        default='', type=str)
     parser.add_argument('--rand', dest='randomize',
                         help='randomize (do not use a fixed seed)',
                         action='store_true')
@@ -101,6 +104,8 @@ if __name__ == '__main__':
     caffe.set_mode_gpu()
     caffe.set_device(args.gpu_id)
 
+    # init iei imdb
+    init_iei_imdbs([(args.imdb_name, args.imdb_path)])
     imdb, roidb = combined_roidb(args.imdb_name)
     print '{:d} roidb entries'.format(len(roidb))
 

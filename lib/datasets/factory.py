@@ -32,11 +32,17 @@ for year in ['2015']:
         name = 'coco_{}_{}'.format(year, split)
         __sets[name] = (lambda split=split, year=year: coco(split, year))
 
-# Set up coco_2015_<split>
-for city in ['sf']:
-    for split in ['train', 'test']:
-        name = 'iei_{}_{}'.format(city, split)
-        __sets[name] = (lambda split=split, year=year: iei_data_reader(split, city))
+
+def init_iei_imdbs(name_paths):
+    """
+    init iei imdbs from name and path pair (name, path dir)
+    :param name_paths:
+    """
+    global __sets
+    __sets = {}
+    for name_path in name_paths:
+        name, path = name_path
+        __sets[name] = (lambda name=name, path=path: iei_data_reader(name, path))
 
 
 def get_imdb(name):
@@ -44,6 +50,7 @@ def get_imdb(name):
     if not __sets.has_key(name):
         raise KeyError('Unknown dataset: {}'.format(name))
     return __sets[name]()
+
 
 def list_imdbs():
     """List all registered imdbs."""

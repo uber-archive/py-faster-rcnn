@@ -35,16 +35,16 @@ __C.TRAIN = edict()
 
 # Scales to use during training (can list multiple scales)
 # Each scale is the pixel size of an image's shortest side
-__C.TRAIN.SCALES = (600,)
+__C.TRAIN.SCALES = (1200,) #(600,)
 
 # Max pixel size of the longest side of a scaled input image
-__C.TRAIN.MAX_SIZE = 1000
+__C.TRAIN.MAX_SIZE = 2000 # 1000
 
 # Images to use per minibatch
 __C.TRAIN.IMS_PER_BATCH = 2
 
 # Minibatch size (number of regions of interest [ROIs])
-__C.TRAIN.BATCH_SIZE = 128
+__C.TRAIN.BATCH_SIZE = 64 #128
 
 # Fraction of minibatch that is labeled foreground (i.e. class > 0)
 __C.TRAIN.FG_FRACTION = 0.25
@@ -58,7 +58,7 @@ __C.TRAIN.BG_THRESH_HI = 0.5
 __C.TRAIN.BG_THRESH_LO = 0.1
 
 # Use horizontally-flipped images during training?
-__C.TRAIN.USE_FLIPPED = True
+__C.TRAIN.USE_FLIPPED = False
 
 # Train bounding-box regressors
 __C.TRAIN.BBOX_REG = True
@@ -94,7 +94,7 @@ __C.TRAIN.PROPOSAL_METHOD = 'selective_search'
 # Make minibatches from images that have similar aspect ratios (i.e. both
 # tall and thin or both short and wide) in order to avoid wasting computation
 # on zero-padding.
-__C.TRAIN.ASPECT_GROUPING = True
+__C.TRAIN.ASPECT_GROUPING = False #True
 
 # Use RPN to detect objects
 __C.TRAIN.HAS_RPN = False
@@ -132,10 +132,10 @@ __C.TEST = edict()
 
 # Scales to use during testing (can list multiple scales)
 # Each scale is the pixel size of an image's shortest side
-__C.TEST.SCALES = (600,)
+__C.TEST.SCALES = (1200,) #(600,)
 
 # Max pixel size of the longest side of a scaled input image
-__C.TEST.MAX_SIZE = 1000
+__C.TEST.MAX_SIZE = 2000 #1000
 
 # Overlap threshold used for non-maximum suppression (suppress boxes with
 # IoU >= this threshold)
@@ -192,8 +192,14 @@ __C.ROOT_DIR = osp.abspath(osp.join(osp.dirname(__file__), '..', '..'))
 # Data directory
 __C.DATA_DIR = osp.abspath(osp.join(__C.ROOT_DIR, 'data'))
 
+# Output directory
+__C.OUTPUT_DIR = osp.abspath(osp.join(__C.ROOT_DIR, 'output'))
+
+# Cache directory
+__C.CACHE_DIR = osp.abspath(osp.join(__C.ROOT_DIR, 'output', 'cache'))
+
 # Model directory
-__C.MODELS_DIR = osp.abspath(osp.join(__C.ROOT_DIR, 'models', 'pascal_voc'))
+__C.MODELS_DIR = osp.abspath(osp.join(__C.ROOT_DIR, 'models', 'iei'))
 
 # Name (or path to) the matlab executable
 __C.MATLAB = 'matlab'

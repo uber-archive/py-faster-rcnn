@@ -12,7 +12,7 @@
 import _init_paths
 from fast_rcnn.test import test_net
 from fast_rcnn.config import cfg, cfg_from_file, cfg_from_list
-from datasets.factory import get_imdb
+from datasets.factory import get_imdb, init_iei_imdbs
 import caffe
 import argparse
 import pprint
@@ -39,6 +39,9 @@ def parse_args():
     parser.add_argument('--imdb', dest='imdb_name',
                         help='dataset to test',
                         default='voc_2007_test', type=str)
+    parser.add_argument('--imdb_path', dest='imdb_path',
+                        help='dataset path to train on',
+                        default='', type=str)
     parser.add_argument('--comp', dest='comp_mode', help='competition mode',
                         action='store_true')
     parser.add_argument('--set', dest='set_cfgs',
@@ -82,6 +85,8 @@ if __name__ == '__main__':
     net = caffe.Net(args.prototxt, args.caffemodel, caffe.TEST)
     net.name = os.path.splitext(os.path.basename(args.caffemodel))[0]
 
+    # init iei imdb
+    init_iei_imdbs([(args.imdb_name, args.imdb_path)])
     imdb = get_imdb(args.imdb_name)
     imdb.competition_mode(args.comp_mode)
     if not cfg.TEST.HAS_RPN:
