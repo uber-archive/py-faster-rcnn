@@ -215,3 +215,15 @@ Test outputs are saved under:
 ```
 output/<experiment directory>/<dataset name>/<network snapshot name>/
 ```
+
+
+# Usage for IEI
+
+1. Train end to end
+./experiments/scripts/faster_rcnn_end2end.sh Sign_BN_ZF_1800X2400 /mnt/data/peizha/frcnn/py-faster-rcnn/models/iei/ZF/faster_rcnn_end2end /mnt/data/peizha/frcnn/py-faster-rcnn/data/imagenet_models/ZF.v2.caffemodel /mnt/data/peizha/frcnn/BlueNoteUS_ForTraining/Train /mnt/data/peizha/frcnn/BlueNoteUS_ForTraining/Test 300000 0 /mnt/data/peizha/frcnn/py-faster-rcnn/experiments/cfgs/faster_rcnn_end2end.yml
+
+2. Test model
+./experiments/scripts/faster_rcnn_end2end_test.sh Sign_TL_ZF_1800X1800 /mnt/data/peizha/frcnn/py-faster-rcnn/models/iei/ZF/faster_rcnn_end2end /mnt/data/peizha/frcnn/py-faster-rcnn/output/faster_rcnn_end2end/Sign_TL_ZF_1800X1800_train/zf_faster_rcnn_iter_70000.caffemodel /run/shm/temp/Val 3 /mnt/data/peizha/frcnn/py-faster-rcnn/experiments/cfgs/faster_rcnn_end2end_1800.yml
+
+3. Test on images
+python ./tools/demo_iei.py --gpu 0 --net output/faster_rcnn_end2end/voc_2007_trainval/zf_faster_rcnn_iter_30000.caffemodel --image_dir data/signs1/
