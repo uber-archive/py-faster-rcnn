@@ -5,7 +5,7 @@
 # Written by Ross Girshick
 # --------------------------------------------------------
 
-from processing.utility.frcnn.nms.py_cpu_nms import py_cpu_nms
+from nms.py_cpu_nms import py_cpu_nms
 
 def nms(dets, thresh, force_cpu=False):
     """Dispatch to either CPU or GPU NMS implementations."""
