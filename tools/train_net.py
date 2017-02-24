@@ -40,6 +40,9 @@ def parse_args():
     parser.add_argument('--cfg', dest='cfg_file',
                         help='optional config file',
                         default=None, type=str)
+    parser.add_argument('--snapshot', dest='previous_state',
+                        help='initialize with previous state',
+                        default=None, type=str)
     parser.add_argument('--imdb', dest='imdb_name',
                         help='dataset to train on',
                         default='voc_2007_trainval', type=str)

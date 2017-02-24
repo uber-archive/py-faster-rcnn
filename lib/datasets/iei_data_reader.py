@@ -27,7 +27,7 @@ class iei_data_reader(imdb):
         self._image_set = image_set
         self._data_path = data_path
         self._classes = ('__background__',  # always index 0
-                         'sign')
+                         'TrafficSign', 'TrafficLight', 'StreetNumber', 'StreetName', 'BusinessName', 'StreetNumberRange', 'SecondaryUnitDesignator', 'None')
         self._class_to_ind = dict(zip(self.classes, xrange(self.num_classes)))
         self._image_ext = '.jpg'
         self._label_ext = '_labeled.xml'
@@ -141,12 +141,13 @@ class iei_data_reader(imdb):
         # Load object bounding boxes into a data frame.
         for ix, obj in enumerate(objs):
             bbox = obj[0]
+            tag = obj[2]
             # todo ensure that these are 0-based
             xmin, ymin, xmax, ymax = bbox
 
             # Make pixel indexes 0-based
             boxes[ix, :] = [xmin - 1, ymin - 1, xmax - 1, ymax - 1]
-            klass = self._class_to_ind['sign']  # todo use sign class name in obj[1]
+            klass = self._class_to_ind[tag]
 
             gt_classes[ix] = klass
             overlaps[ix, klass] = 1.0
@@ -169,9 +170,9 @@ class iei_data_reader(imdb):
         raise NotImplementedError
         ##################
 
-    def _get_iei_results_file_template(self):
+    def _get_iei_results_file_template(self, cls):
         # <data path>/Main/test_sign.txt
-        filename = self._image_set + '_.txt'
+        filename = self._image_set + '_' + str(cls) + '.txt'
         path = os.path.join(
             cfg.OUTPUT_DIR,
             filename)
@@ -182,7 +183,7 @@ class iei_data_reader(imdb):
             if cls == '__background__':
                 continue
             print 'Writing {} IEI results file'.format(cls)
-            filename = self._get_iei_results_file_template().format(cls)
+            filename = self._get_iei_results_file_template(cls)
             with open(filename, 'wt') as f:
                 for im_ind, index in enumerate(self.image_index):
                     dets = all_boxes[cls_ind][im_ind]
@@ -202,7 +203,7 @@ class iei_data_reader(imdb):
         for i, cls in enumerate(self._classes):
             if cls == '__background__':
                 continue
-            filename = self._get_iei_results_file_template().format(cls)
+            filename = self._get_iei_results_file_template(cls)
             rec, prec, ap = iei_eval(
                 filename, self._data_path, cls, self.cache_path, ovthresh=0.5)
             aps += [ap]
@@ -239,7 +240,7 @@ class iei_data_reader(imdb):
             for cls in self._classes:
                 if cls == '__background__':
                     continue
-                filename = self._get_iei_results_file_template().format(cls)
+                filename = self._get_iei_results_file_template(cls)
                 os.remove(filename)
 
 

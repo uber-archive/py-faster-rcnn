@@ -9,6 +9,7 @@ import os
 import cPickle
 import numpy as np
 
+known_classes = set(('TrafficSign', 'TrafficLight', 'StreetNumber', 'StreetName', 'BusinessName', 'StreetNumberRange', 'SecondaryUnitDesignator', 'None'))
 
 def get_files(dir, ext):
     for current_dir, sub_dir, files in os.walk(dir):
@@ -26,7 +27,7 @@ def load_truth_from_xmlnode(xmlnode):
     truths = []
     for truth in xmlnode.findall('page/region/line/word'):
         tags1 = truth.get('tags')
-        if tags1 is None:
+        if tags1 is None or tags1 not in known_classes:
             tags1 = 'None'
         val = truth.get('val')
         poly = truth.get('poly')
@@ -63,7 +64,7 @@ def parse_rec(filename):
     for obj in load_truth_from_xmlnode(input_node):
         bbox = obj[0]
         obj_struct = {}
-        obj_struct['name'] = 'sign'
+        obj_struct['name'] = obj[-1]
         obj_struct['pose'] = 'Unspecified'
         obj_struct['truncated'] = 0
         obj_struct['difficult'] = 0
@@ -171,7 +172,10 @@ def iei_eval(detpath,
     # sort by confidence
     sorted_ind = np.argsort(-confidence)
     sorted_scores = np.sort(-confidence)
-    BB = BB[sorted_ind, :]
+    try:
+    	BB = BB[sorted_ind, :]
+    except:
+        return 'None'
     image_ids = [image_ids[x] for x in sorted_ind]
 
     # go down dets and mark TPs and FPs:

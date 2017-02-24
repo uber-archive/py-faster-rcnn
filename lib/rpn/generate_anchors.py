@@ -6,6 +6,7 @@
 # --------------------------------------------------------
 
 import numpy as np
+from fast_rcnn.config import cfg
 
 # Verify that we compute the same anchors as Shaoqing's matlab implementation:
 #
@@ -34,13 +35,14 @@ import numpy as np
 #       [ -79., -167.,   96.,  184.],
 #       [-167., -343.,  184.,  360.]])
 
-def generate_anchors(base_size=16, ratios=[0.5, 1, 2],
+def generate_anchors(base_size=16, ratios=[0.2, 0.5, 1, 2, 5],
                      scales=2**np.arange(3, 6)):
     """
     Generate anchor (reference) windows by enumerating aspect ratios X
     scales wrt a reference (0, 0, 15, 15) window.
     """
-
+    if len(np.array(cfg.TRAIN.ANCHOR_RATIOS) > 0):
+        ratios = np.array(cfg.TRAIN.ANCHOR_RATIOS)
     base_anchor = np.array([1, 1, base_size, base_size]) - 1
     ratio_anchors = _ratio_enum(base_anchor, ratios)
     anchors = np.vstack([_scale_enum(ratio_anchors[i, :], scales)

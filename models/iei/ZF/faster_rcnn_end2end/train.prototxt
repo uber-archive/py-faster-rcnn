@@ -8,7 +8,7 @@ layer {
   python_param {
     module: 'roi_data_layer.layer'
     layer: 'RoIDataLayer'
-    param_str: "'num_classes': 2"
+    param_str: "'num_classes': 9"
   }
 }
 
@@ -238,7 +238,7 @@ layer {
   param { lr_mult: 1.0 }
   param { lr_mult: 2.0 }
   convolution_param {
-    num_output: 18   # 2(bg/fg) * 9(anchors)
+    num_output: 30   # 2(bg/fg) * 9(anchors)
     kernel_size: 1 pad: 0 stride: 1
     weight_filler { type: "gaussian" std: 0.01 }
     bias_filler { type: "constant" value: 0 }
@@ -252,7 +252,7 @@ layer {
   param { lr_mult: 1.0 }
   param { lr_mult: 2.0 }
   convolution_param {
-    num_output: 36   # 4 * 9(anchors)
+    num_output:  60  # 4 * 9(anchors)
     kernel_size: 1 pad: 0 stride: 1
     weight_filler { type: "gaussian" std: 0.01 }
     bias_filler { type: "constant" value: 0 }
@@ -321,7 +321,7 @@ layer {
   type: 'Reshape'
   bottom: 'rpn_cls_prob'
   top: 'rpn_cls_prob_reshape'
-  reshape_param { shape { dim: 0 dim: 18 dim: -1 dim: 0 } }
+  reshape_param { shape { dim: 0 dim: 30 dim: -1 dim: 0 } }
 }
 layer {
   name: 'proposal'
@@ -361,7 +361,7 @@ layer {
   python_param {
     module: 'rpn.proposal_target_layer'
     layer: 'ProposalTargetLayer'
-    param_str: "'num_classes': 2"
+    param_str: "'num_classes': 9"
   }
 }
 
@@ -441,7 +441,7 @@ layer {
   param { lr_mult: 1.0 }
   param { lr_mult: 2.0 }
   inner_product_param {
-    num_output: 2
+    num_output: 9
     weight_filler {
       type: "gaussian"
       std: 0.01
@@ -460,7 +460,7 @@ layer {
   param { lr_mult: 1.0 }
   param { lr_mult: 2.0 }
   inner_product_param {
-    num_output: 8
+    num_output: 36
     weight_filler {
       type: "gaussian"
       std: 0.001

@@ -14,12 +14,10 @@ export PYTHONUNBUFFERED="True"
 
 EXPERIMENT_NAME=$1
 PROTOTXT_DIR=$2
-WEIGHTS=$3
-TRAIN_PATH=$4
-TEST_PATH=$5
-MAX_ITERS=$6
-GPU_ID=$7
-CONFIG_YML_PATH=$8
+NET_FINAL=$3
+TEST_PATH=$4
+GPU_ID=$5
+CONFIG_YML_PATH=$6
 
 array=( $@ )
 len=${#array[@]}
@@ -33,18 +31,7 @@ LOG="experiments/logs/faster_rcnn_end2end_${EXPERIMENT_NAME}_${EXTRA_ARGS_SLUG}.
 exec &> >(tee -a "$LOG")
 echo Logging output to "$LOG"
 
-time ./tools/train_net.py --solver ${PROTOTXT_DIR}/solver.prototxt \
-  --weights ${WEIGHTS} \
-  --imdb ${TRAIN_IMDB} \
-  --imdb_path ${TRAIN_PATH} \
-  --iters ${MAX_ITERS} \
-  --cfg ${CONFIG_YML_PATH} \
-  --gpu ${GPU_ID} \
-  ${EXTRA_ARGS}
 
-set +x
-NET_FINAL=`grep -B 1 "done solving" ${LOG} | grep "Wrote snapshot" | awk '{print $4}'`
-set -x
 
 time ./tools/test_net.py --def ${PROTOTXT_DIR}/test.prototxt \
   --net ${NET_FINAL} \

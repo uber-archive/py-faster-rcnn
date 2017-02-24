@@ -159,6 +159,6 @@ if __name__ == '__main__':
         print '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
         print 'Demo for {}'.format(im_name)
         demo(net, im_name)
-
+    import pdb; pdb.set_trace()
     plt.show()
 

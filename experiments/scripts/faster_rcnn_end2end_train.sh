@@ -19,11 +19,10 @@ TRAIN_PATH=$4
 TEST_PATH=$5
 MAX_ITERS=$6
 GPU_ID=$7
-CONFIG_YML_PATH=$8
 
 array=( $@ )
 len=${#array[@]}
-EXTRA_ARGS=${array[@]:8:$len}
+EXTRA_ARGS=${array[@]:7:$len}
 EXTRA_ARGS_SLUG=${EXTRA_ARGS// /_}
 
 TRAIN_IMDB="${EXPERIMENT_NAME}_train"
@@ -38,7 +37,7 @@ time ./tools/train_net.py --solver ${PROTOTXT_DIR}/solver.prototxt \
   --imdb ${TRAIN_IMDB} \
   --imdb_path ${TRAIN_PATH} \
   --iters ${MAX_ITERS} \
-  --cfg ${CONFIG_YML_PATH} \
+  --cfg experiments/cfgs/faster_rcnn_end2end.yml \
   --gpu ${GPU_ID} \
   ${EXTRA_ARGS}
 
@@ -50,6 +49,6 @@ time ./tools/test_net.py --def ${PROTOTXT_DIR}/test.prototxt \
   --net ${NET_FINAL} \
   --imdb ${TEST_IMDB} \
   --imdb_path ${TEST_PATH} \
-  --cfg ${CONFIG_YML_PATH} \
+  --cfg experiments/cfgs/faster_rcnn_end2end.yml \
   --gpu ${GPU_ID} \
   ${EXTRA_ARGS}
