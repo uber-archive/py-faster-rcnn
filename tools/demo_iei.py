@@ -15,6 +15,7 @@ See README.md for installation instructions before running.
 
 import _init_paths
 from fast_rcnn.config import cfg
+from fast_rcnn.config import cfg_from_file
 from fast_rcnn.test import im_detect
 from fast_rcnn.nms_wrapper import nms
 from utils.timer import Timer
@@ -120,6 +121,7 @@ def parse_args():
     parser.add_argument('--net', dest='demo_net', help='Network to use')
     parser.add_argument('--test_pt', dest='test_prototxt', help='test prototxt')
     parser.add_argument('--image_dir', dest='image_dir', help='input image dir')
+    parser.add_argument('--cfg_path', dest='cfg_path', help='config path')
 
     args = parser.parse_args()
 
@@ -133,6 +135,9 @@ if __name__ == '__main__':
 
     prototxt = args.test_prototxt
     caffemodel = args.demo_net
+    cfg_path = args.cfg_path
+    if cfg_path is not None:
+        cfg_from_file(cfg_path)
 
     if not os.path.isfile(caffemodel):
         raise IOError(('{:s} not found.\nDid you run ./data/script/'
